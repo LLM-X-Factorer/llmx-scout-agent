@@ -74,6 +74,35 @@ tail -f logs/cron.log
 # 卸载：bash scripts/uninstall_launchd.sh
 ```
 
+## Pack 投递（可选，但推荐用于多机部署）
+
+scout 默认把 pack 写到 `output/packs/`（gitignored）。如果你想让下游 agent 在
+另一台机器上消费 pack，最干净的方式是建一个独立仓库 `llmx-scout-packs`，
+让 scout 跑完自动 commit & push。
+
+```bash
+# 1. 在 GitHub 上建 llmx-scout-packs 仓库（公开或私有都行）
+gh repo create LLM-X-Factorer/llmx-scout-packs --public
+
+# 2. 在 scout 同级目录 clone 它
+cd ..
+git clone git@github.com:LLM-X-Factorer/llmx-scout-packs.git
+cd llmx-scout-agent
+
+# 3. 在 config/scout.local.toml 里指 output_dir
+echo 'output_dir = "../llmx-scout-packs/packs"' >> config/scout.local.toml
+# (scout.local.toml 已经在 .gitignore，本机配置)
+
+# 4. 跑一次，看到 ↑ pushed 行说明成功
+uv run scout discover --limit 10
+```
+
+行为：
+- `deliver_on_write = true` 默认开启（在 `config/scout.toml` 可改）
+- 每次 `discover` / `pack` 跑完自动 commit + push
+- push 失败不影响主流程（commit 留在本地，下次自动追上）
+- `--no-deliver` 临时关闭单次投递
+
 ## 输出长这样
 
 每个候选写到 `output/packs/YYYY-MM-DD/<slug>.md`，是一份带 YAML frontmatter 的 Markdown：
@@ -168,6 +197,9 @@ scout_analysis:
 - [x] [#2](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/2) GitHub Trending source
 - [x] [#3](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/3) Reddit source
 - [ ] [#7](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/7) Floor rule fires inconsistently with judgment_space score
+- [ ] [#8](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/8) Pack delivery via git push to companion repo
+- [ ] [#9](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/9) plist 模板化
+- [ ] [#10](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/10) Bootstrap script for new host
 - [ ] [#4](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/4) 重评机制（spec §11）
 - [ ] [#5](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/5) cron / launchd 上线
 - [ ] [#6](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/6) Prompt v0.2（用 20 条真实历史样本校准）

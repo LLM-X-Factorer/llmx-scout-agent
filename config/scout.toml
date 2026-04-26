@@ -7,6 +7,16 @@ max_comments_per_pack = 5
 fulltext_max_chars = 50000
 http_timeout_s = 20.0
 
+# When output_dir is inside a git repo, auto-commit + push after a write.
+# Set to false to disable; --no-deliver overrides on a per-run basis.
+deliver_on_write = true
+deliver_push = true
+
+# Set output_dir to a clone of llmx-scout-packs to enable git delivery.
+# Default (output/packs) is gitignored within the scout repo, so delivery
+# silently no-ops in dev — set this when you point scout at a packs repo.
+# output_dir = "../llmx-scout-packs/packs"
+
 anthropic_model = "claude-sonnet-4-6"
 
 [reddit]

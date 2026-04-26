@@ -52,6 +52,8 @@ class Config:
     max_comments_per_pack: int = 5
     fulltext_max_chars: int = 50_000
     http_timeout_s: float = 20.0
+    deliver_on_write: bool = True
+    deliver_push: bool = True
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-sonnet-4-6"
     user_agent: str = "llmx-scout-agent/0.1 (+https://github.com/LLM-X-Factorer/llmx-scout-agent)"
@@ -79,6 +81,8 @@ def load(toml_path: Path | None = None) -> Config:
         max_comments_per_pack=raw.get("max_comments_per_pack", 5),
         fulltext_max_chars=raw.get("fulltext_max_chars", 50_000),
         http_timeout_s=raw.get("http_timeout_s", 20.0),
+        deliver_on_write=raw.get("deliver_on_write", True),
+        deliver_push=raw.get("deliver_push", True),
         anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY"),
         anthropic_model=raw.get("anthropic_model", "claude-sonnet-4-6"),
         user_agent=raw.get(

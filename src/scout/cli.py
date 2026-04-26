@@ -16,6 +16,7 @@ import typer
 from scout import calibration as cal
 from scout import config as cfg
 from scout import models
+from scout.delivery import git as delivery
 from scout.filter import keywords as kw
 from scout.filter import scoring as sc
 from scout.harvest import comments as cmts
@@ -165,6 +166,28 @@ def _build_candidate_from_hn_item(item: dict) -> models.Candidate:
     return cand
 
 
+def _maybe_deliver(c: cfg.Config, *, message: str, pack_count: int, no_deliver: bool) -> None:
+    """Run git delivery if enabled. Always informational, never raises."""
+    if no_deliver or not c.deliver_on_write:
+        return
+    if pack_count == 0:
+        return
+    result = delivery.deliver(
+        c.output_dir,
+        pack_count=pack_count,
+        message=message,
+        push=c.deliver_push,
+    )
+    if result.skipped_reason:
+        # Silent unless verbose — this is the common dev path (output_dir not in git).
+        return
+    if result.committed:
+        push_state = "pushed" if result.pushed else "commit only (push failed)"
+        typer.echo(f"  ↑ {push_state} {result.commit_sha} ({result.pack_count} pack(s))")
+    for w in result.warnings:
+        typer.echo(f"  ! delivery: {w}", err=True)
+
+
 def _persist(
     conn,
     *,
@@ -225,6 +248,9 @@ def pack(
     no_score: Annotated[
         bool, typer.Option("--no-score", help="skip LLM scoring (manual mode)")
     ] = False,
+    no_deliver: Annotated[
+        bool, typer.Option("--no-deliver", help="skip git commit + push of the new pack")
+    ] = False,
 ) -> None:
     """Manually package one URL. Skips Discover and keyword filter; still scores by default.
 
@@ -283,7 +309,13 @@ def pack(
         pack_id=pack_obj.frontmatter.pack_id,
         decision="packed",
     )
-    typer.echo(f"wrote {path.relative_to(c.project_root)}")
+    typer.echo(f"wrote {path}")
+    _maybe_deliver(
+        c,
+        message=f"scout: pack {pack_obj.frontmatter.pack_id}",
+        pack_count=1,
+        no_deliver=no_deliver,
+    )
 
 
 @app.command()
@@ -294,6 +326,9 @@ def discover(
         list[str] | None,
         typer.Option("--source", help="restrict to source(s). default: all"),
     ] = None,
+    no_deliver: Annotated[
+        bool, typer.Option("--no-deliver", help="skip git commit + push of new packs")
+    ] = False,
 ) -> None:
     """Run one full discover → filter → score → harvest → pack pass."""
     c = cfg.load()
@@ -464,6 +499,12 @@ def discover(
         written += 1
 
     typer.echo(f"done: wrote {written} pack(s)")
+    _maybe_deliver(
+        c,
+        message=f"scout: {written} pack(s) on {datetime.now(UTC):%Y-%m-%d}",
+        pack_count=written,
+        no_deliver=no_deliver,
+    )
 
 
 @app.command(name="list")
