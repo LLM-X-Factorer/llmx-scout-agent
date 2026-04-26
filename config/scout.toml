@@ -1,0 +1,10 @@
+# Default scout config. Copy to scout.local.toml for personal overrides
+# (scout.local.toml is gitignored).
+
+score_threshold = 7.0
+max_candidates_per_run = 50
+max_comments_per_pack = 5
+fulltext_max_chars = 50000
+http_timeout_s = 20.0
+
+anthropic_model = "claude-sonnet-4-6"
