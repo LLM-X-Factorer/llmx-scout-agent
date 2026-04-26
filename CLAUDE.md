@@ -26,16 +26,22 @@
 
 ---
 
-## 当前进度速览（截至 2026-04-26）
+## 当前进度速览（截至 2026-04-26 v0.1.0）
 
-V0.1 MVP 已可端到端跑：
-- HN 单源 discover/score/harvest/pack 全闭环
-- `scout pack <url>` 手工注入
-- `scout score-tune` 校准 harness（4 条种子样本）
-- `.env` 自动加载；OpenRouter dev client 可用
-- 51 单元测试 + 真跑端到端 + 真跑校准全过
+**已发布**：
+- 三源 discover：HN + GitHub Trending + Reddit
+- 评分（Anthropic 生产，OpenRouter 开发）
+- Harvest：trafilatura 正文抽取 + 平台特定评论抓取
+- 写盘：符合 schema 的 source pack
+- 自动 git delivery 到独立仓库 `llmx-scout-packs`
+- macOS launchd 每天 9/15/21 跑（plist 模板化，可移植到任意 Mac）
+- `scout score-tune` 校准 harness（5 条种子样本）
+- `bootstrap.sh` 一键初始化新 host
+- `.env` 自动加载
+- 71 单元测试 + 真跑端到端 + 真跑校准全过
+- 部署目标：HK Mac mini（用户次日上线）
 
-未来工作**走 GitHub issues 不走本文件**。决策日志只记"已经定下来"的设计选择，不记"待办/风险"。
+**未来工作走 GitHub issues**，不走本文件。决策日志只记"已经定下来"的设计选择，不记"待办/风险"。
 
 当前 open issues: `gh issue list`
 
@@ -175,6 +181,32 @@ scout 与下游 `llmx-advocate-agent` 通过 source pack 文件通信。
 - **风险**：同一 URL 可能产生多版 pack；下游 advocate 需识别同 url_hash 多版本
 - **拍板人**：用户（2026-04-26）
 - **落地**：`docs/specification.md` §11
+
+### 2026-04-26 · 部署目标 = HK Mac mini，不上 docker / Lighthouse（已拍板）
+
+- **决策**：scout 部署在用户位于香港的 24h Mac mini 上，**不**走 docker + 阿里云 Lighthouse 路线
+- **理由**：
+    - HK 节点天然解决 Reddit / Anthropic 在大陆的网络问题
+    - 同 launchd / uv / Python 工具链零迁移成本
+    - 已经是 24/7 在跑的机器，零基础设施成本
+    - docker/Lighthouse 的复杂度（镜像构建 / CI / 容器化）对单用户场景过度
+- **配套实现**（在同一天完成）：
+    - `scripts/com.llmxfactors.scout.discover.plist.template` — plist 模板化，install 时按 host 填充 `@@HOME@@/@@PROJECT_ROOT@@/@@UV_BIN@@`
+    - `scripts/bootstrap.sh` — 新机器一键初始化，幂等
+- **拍板人**：用户（2026-04-26 晚）
+- **如果将来 HK Mac mini 不够用**：先优化（多 host 复制部署即可），再考虑容器化
+
+### 2026-04-26 · Pack 投递走独立私有 git 仓库（已拍板）
+
+- **决策**：scout 产出的 pack **不**留在 scout 代码仓库，而是 push 到独立仓库 `LLM-X-Factorer/llmx-scout-packs`（私有）
+- **理由**：
+    - scout 代码仓保持干净，不被几百几千个运行时产物污染 commit history
+    - 下游 advocate-agent 只需 clone packs 仓库，不必碰 scout 代码
+    - GitHub UI 直接渲染 markdown，自带浏览/搜索/审计
+    - 跨机器同步的最简方案：`git pull`，无需任何外部存储
+- **隐私边界**：私有仓库 — 用户的选题倾向不该公开（它揭示编辑判断与目标受众）
+- **实现**：`src/scout/delivery/git.py` 在每次 discover/pack 完成后自动 commit + push；push 失败留地commit、下次重试；`output_dir` 不在 git 仓内则静默 no-op（开发体验不变）
+- **拍板人**：用户（2026-04-26）
 
 ### 2026-04-26 · 待办与风险走 GitHub issues，不走 CLAUDE.md（已拍板）
 

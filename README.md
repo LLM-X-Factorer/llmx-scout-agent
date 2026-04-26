@@ -2,7 +2,7 @@
 
 > 为 AI 工程布道者准备的"每日选题侦察兵"。从海外 AI 圈的高质量信息源主动寻找有判断空间的选题，扒原文、扒讨论、写预判，输出标准化 source pack 文件给下游内容生产 agent 消费。
 
-**状态**：V0.1 MVP 已可用（HN 单源端到端跑通；GitHub Trending / Reddit 在 Sprint 2，见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)）
+**状态**：[v0.1.0](https://github.com/LLM-X-Factorer/llmx-scout-agent/releases) 已发布。HN + GitHub Trending + Reddit 三源端到端跑通；macOS launchd 每天 9/15/21 自动跑；pack 自动 push 到独立仓库 [`llmx-scout-packs`](https://github.com/LLM-X-Factorer/llmx-scout-packs)（私有）。剩余工作见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)。
 
 ---
 
@@ -210,16 +210,19 @@ scout_analysis:
 
 ### 已规划（GitHub issues 跟踪）
 
-- [ ] [#1](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/1) Score 阈值边界波动 ±0.4
+**已完成**
 - [x] [#2](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/2) GitHub Trending source
 - [x] [#3](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/3) Reddit source
-- [ ] [#7](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/7) Floor rule fires inconsistently with judgment_space score
-- [ ] [#8](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/8) Pack delivery via git push to companion repo
-- [ ] [#9](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/9) plist 模板化
-- [ ] [#10](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/10) Bootstrap script for new host
-- [ ] [#4](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/4) 重评机制（spec §11）
-- [ ] [#5](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/5) cron / launchd 上线
-- [ ] [#6](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/6) Prompt v0.2（用 20 条真实历史样本校准）
+- [x] [#5](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/5) cron / launchd 上线
+- [x] [#8](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/8) Pack delivery via git push 到独立仓库
+- [x] [#9](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/9) launchd plist 模板化
+- [x] [#10](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/10) Bootstrap script for new host
+
+**等数据积累 / 用户输入**
+- [ ] [#1](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/1) Score 阈值边界波动 ±0.4（等 ~30 条 score_history）
+- [ ] [#4](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/4) 重评机制（spec §11，等 dedup 攒一周）
+- [ ] [#6](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/6) Prompt v0.2（等用户提供 20 条真实历史样本）
+- [ ] [#7](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/7) Floor rule 触发与 judgment_space 不一致（配合 #6 一起改）
 
 ### 不在路线图前列
 
