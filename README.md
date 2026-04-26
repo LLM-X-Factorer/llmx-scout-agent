@@ -2,7 +2,7 @@
 
 > 为 AI 工程布道者准备的"每日选题侦察兵"。从海外 AI 圈的高质量信息源主动寻找有判断空间的选题，扒原文、扒讨论、写预判，输出标准化 source pack 文件给下游内容生产 agent 消费。
 
-**状态**：V0.1 设计阶段（spec 已完成，代码尚未开始）
+**状态**：V0.1 MVP 已可用（HN 单源端到端跑通；GitHub Trending / Reddit 在 Sprint 2，见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)）
 
 ---
 
@@ -38,6 +38,34 @@ scout 是分析师的素材准备员，不是分析师本身。
 详细规格：[`docs/specification.md`](./docs/specification.md)
 
 ---
+
+## Quick Start
+
+```bash
+# 1. 安装依赖（uv 自动建虚拟环境）
+uv sync
+
+# 2. 配 LLM key —— 二选一
+cp .env.example .env
+# 然后编辑 .env，填入 ANTHROPIC_API_KEY（生产）
+# 或开发期用 OpenRouter：取消注释 SCOUT_LLM_PROVIDER + OPENROUTER_API_KEY + SCOUT_LLM_MODEL
+
+# 3. 自检
+uv run scout doctor
+
+# 4. 跑一次：自动发现 → 关键词初筛 → LLM 评分 → 写 pack
+uv run scout discover --limit 30
+
+# 5. 看结果
+uv run scout list --since today
+ls output/packs/
+
+# 6. 手工注入一个 URL（跳过发现，直接打包）
+uv run scout pack 'https://news.ycombinator.com/item?id=12345'
+
+# 7. 校准评分提示词
+uv run scout score-tune -v
+```
 
 ## 输出长这样
 
@@ -110,27 +138,36 @@ scout_analysis:
 
 ## 项目状态与路线图
 
-### V0.1 — 当前阶段
+### V0.1 — 已完成
 
 - [x] 接口契约：`docs/source-pack-schema.md`
 - [x] 下游契约理解：`docs/upstream-context.md`
 - [x] 规格说明：`docs/specification.md`
 - [x] 架构选型：`docs/architecture-options.md`
-- [x] 评分提示词草案：`prompts/scoring.md`
-- [ ] 真实样本校准评分提示词（→ v0.2）
-- [ ] 代码：HN → 关键词 → 评分 → pack 端到端最短闭环
-- [ ] 代码：加 GitHub、Reddit
-- [ ] 代码：正文抽取阶梯（trafilatura → readability → playwright）
-- [ ] 代码：去重 + score_history
-- [ ] 代码：`scout pack <url>` 手工注入
-- [ ] 代码：通知层（macOS 本地通知优先）
-- [ ] 代码：`scout doctor`
-- [ ] cron 上线
+- [x] 评分提示词 v0.1：`prompts/scoring.md`（三维加权）
+- [x] HN → 关键词 → 评分 → pack 端到端最短闭环（含真实运行验证）
+- [x] 正文抽取（trafilatura）+ HN 评论扒取
+- [x] 去重 + `score_history` 持久化
+- [x] `scout pack <url>` 手工注入
+- [x] `scout discover` 自动发现 + 评论预览喂 LLM
+- [x] `scout score-tune` 校准 harness + `fixtures/calibration/` 样本目录
+- [x] `scout doctor` 自检
+- [x] OpenRouter 开发期客户端 + `.env` 自动加载
+- [x] 51 单元测试 + 真跑端到端 + 真跑校准
+
+### 已规划（GitHub issues 跟踪）
+
+- [ ] [#1](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/1) Score 阈值边界波动 ±0.4
+- [ ] [#2](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/2) GitHub Trending source
+- [ ] [#3](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/3) Reddit source
+- [ ] [#4](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/4) 重评机制（spec §11）
+- [ ] [#5](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/5) cron / launchd 上线
+- [ ] [#6](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/6) Prompt v0.2（用 20 条真实历史样本校准）
 
 ### 不在路线图前列
 
 - Web UI / pack 浏览器
-- 多 LLM provider
+- 多 LLM provider 抽象（LiteLLM 等；Anthropic 主，OpenRouter 仅开发用）
 - 翻译模块
 - MCP 服务
 - 任意 RSS 接入
@@ -138,6 +175,32 @@ scout_analysis:
 详见 [`CLAUDE.md`](./CLAUDE.md) "不做清单"。
 
 ---
+
+## 项目布局
+
+```
+llmx-scout-agent/
+├── src/scout/
+│   ├── cli.py              # typer 入口（discover / pack / list / show / score-tune / doctor）
+│   ├── config.py           # 配置 + .env 自动加载
+│   ├── models.py           # pydantic 模型（schema 校验）
+│   ├── pipeline 模块/
+│   │   ├── sources/hacker_news.py
+│   │   ├── filter/keywords.py    # TrendRadar 风格 DSL
+│   │   ├── filter/scoring.py     # Anthropic + OpenRouter clients
+│   │   └── harvest/{fulltext,comments,packer}.py
+│   ├── store/db.py         # 极薄 sqlite 封装
+│   ├── calibration.py      # score-tune harness
+│   └── utils/{url_norm,slug,retry}.py
+├── prompts/scoring.md      # 评分提示词（带 frontmatter 版本号）
+├── fixtures/calibration/   # 校准金标样本（YAML）
+├── config/
+│   ├── keywords.txt        # 关键词配置
+│   └── scout.toml          # 阈值 / 路径 / 模型
+├── docs/                   # spec / schema / architecture / decisions
+├── tests/                  # pytest（51 用例）
+└── output/packs/           # 运行时产出（gitignored）
+```
 
 ## 技术栈（候选 — 推荐方案）
 

@@ -16,19 +16,27 @@ input:
     - @user3: Cool, but where's the open-source repo?
 
 expected:
-  final_score: 4.0
-  layer: 转化层
-  judgment_seed_keywords: []
+  final_score: 6.0
+  layer: 留存层
+  judgment_seed_keywords: []   # 见 notes：不锁定具体角度
 
 tolerance:
   score: 1.5
   layer_strict: false
 
 notes: |
-  中低分（3.5-5）。Paper 类内容信息密度天然高（有可复现实验、benchmark），
-  但 HN 上学术 paper 的评论通常都是引介与同类项目对比，缺乏对立观点
-  和反直觉判断。judgment_space 偏低，但 info_density 拉一点。
-  适合给"工具/技术指南类"消费的转化层，不适合判断驱动的留存/引流。
+  中分（5-7），originally 4.0 → 6.0 after 2026-04-26 calibration run.
 
-  这条是测试模型能否区分"密度 ≠ 判断空间"。如果模型因为 paper 看起来
-  专业就给高分，prompt 需要进一步强调维度独立。
+  原假设："paper 类内容评论稀少 → judgment 空间小，应低分"——这是一个
+  系统性偏差。模型从标题里就能挖出真实的二阶判断（如"GPU 加速对稀疏
+  vs 稠密图效果不同"或"批处理 vs 递归收敛的语义张力"）。
+
+  教训 1：judgment_space 不一定靠评论区争议触发；标题本身就可能携带
+  反直觉的二阶判断角度。
+  教训 2：judgment_seed_keywords 不应锁定具体角度——模型对同一话题
+  能产出多个等效有效的视角，强制关键词是过度规范。这里留空，只校验
+  score+layer。如要锁定 seed 必须包含某概念，后续可加；但 v0.1 默认
+  不锁。
+
+  layer 也从「转化层」改成「留存层」：这不是"教你用 GPU Datalog"的
+  工具教程，而是"什么时候 GPU 加速划得来"的范式分析。

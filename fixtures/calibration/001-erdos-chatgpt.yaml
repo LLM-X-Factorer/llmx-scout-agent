@@ -17,12 +17,7 @@ input:
 expected:
   final_score: 7.5
   layer: 引流层
-  judgment_seed_keywords:
-    - 数学
-    - 提示
-    - 直觉
-    - 平权
-    - 能力
+  judgment_seed_keywords: []   # 不锁定角度，见 fixtures README
 
 tolerance:
   score: 1.5

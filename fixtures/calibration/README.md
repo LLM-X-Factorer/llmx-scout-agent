@@ -50,10 +50,7 @@ input:
 expected:
   final_score: 7.5             # required, [0, 10]
   layer: 留存层                 # required: 引流层 | 留存层 | 转化层 | unsure
-  judgment_seed_keywords: []   # optional; if set, model's seed must contain
-                               # at least one of these strings (case-insensitive)
-                               # use this to lock in the conceptual axis,
-                               # not exact wording
+  judgment_seed_keywords: []   # default: empty. See "On seed keywords" below.
 
 # How forgiving the regression should be
 tolerance:
@@ -69,6 +66,21 @@ notes: |
 
 `NNN-short-slug.yaml` — leading number gives stable ordering when you scan
 the report. Slug should match `id` field.
+
+## On `judgment_seed_keywords`
+
+**Default to empty.** A given topic usually has multiple valid second-order
+angles, and the model will pick a different one across runs. Locking the
+seed to specific keywords creates spurious failures that punish creativity
+rather than catching real drift.
+
+Use it only when:
+- The fixture is testing a *specific* misreading you want to prevent
+  (e.g. "if the model's seed contains '炒作' we know it failed to find
+  any analytical angle")
+- You want a strict regression on a known-good seed concept
+
+Otherwise leave it `[]` and rely on `final_score` + `layer` for alignment.
 
 ## What NOT to put here
 

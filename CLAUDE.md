@@ -21,6 +21,24 @@
 
 读完再写代码。**这是硬规则，不是建议。**
 
+第四件（如果你要改 prompt 或评分逻辑）：
+4. `prompts/scoring.md` 与 `fixtures/calibration/README.md`
+
+---
+
+## 当前进度速览（截至 2026-04-26）
+
+V0.1 MVP 已可端到端跑：
+- HN 单源 discover/score/harvest/pack 全闭环
+- `scout pack <url>` 手工注入
+- `scout score-tune` 校准 harness（4 条种子样本）
+- `.env` 自动加载；OpenRouter dev client 可用
+- 51 单元测试 + 真跑端到端 + 真跑校准全过
+
+未来工作**走 GitHub issues 不走本文件**。决策日志只记"已经定下来"的设计选择，不记"待办/风险"。
+
+当前 open issues: `gh issue list`
+
 ---
 
 ## 与 advocate-agent 的契约纪律
@@ -157,6 +175,21 @@ scout 与下游 `llmx-advocate-agent` 通过 source pack 文件通信。
 - **风险**：同一 URL 可能产生多版 pack；下游 advocate 需识别同 url_hash 多版本
 - **拍板人**：用户（2026-04-26）
 - **落地**：`docs/specification.md` §11
+
+### 2026-04-26 · 待办与风险走 GitHub issues，不走 CLAUDE.md（已拍板）
+
+- **决策**：本文件「决策日志」只记**已经定下来**的设计选择。"待办 / 风险 / 未来工作"全部开 GH issue 跟踪
+- **理由**：用户明确偏好（"问题记录到 github issue 里面好"）；issue 有状态/标签/评论比 markdown 段落好维护
+- **How to apply**：发现新风险 → `gh issue create`；新设计想法 → 也开 issue 走讨论；只在拍板后回填到本文件
+- **拍板人**：用户（2026-04-26）
+
+### 2026-04-26 · 校准 fixture 默认不锁 seed 关键词（已拍板）
+
+- **决策**：`fixtures/calibration/*.yaml` 中 `judgment_seed_keywords` 默认 `[]`，只校验 `final_score` 和 `layer`
+- **理由**：实测同一话题模型能产出多个等效有效的 X-but-Y 角度（datalog-gpu 两次跑给出"稠密 vs 稀疏访存"和"批处理 vs 递归收敛"两个完全不同但都正确的视角）。强制关键词把 LLM 创造力当成失败
+- **How to apply**：写新 fixture 时 `judgment_seed_keywords: []`；只在"想阻止具体误读"或"强回归 known-good 概念"时才加
+- **拍板人**：用户（2026-04-26）
+- **落地**：`fixtures/calibration/README.md` "On seed keywords" 章节
 
 ### 2026-04-26 · OpenRouter 作为开发期 LLM 客户端（已拍板）
 

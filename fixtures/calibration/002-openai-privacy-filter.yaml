@@ -18,13 +18,7 @@ input:
 expected:
   final_score: 7.0
   layer: 留存层
-  judgment_seed_keywords:
-    - 隐私
-    - 合规
-    - 数据
-    - 飞轮
-    - 锁定
-    - 生态
+  judgment_seed_keywords: []   # 不锁定角度，见 fixtures README
 
 tolerance:
   score: 1.5
