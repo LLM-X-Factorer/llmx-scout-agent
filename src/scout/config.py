@@ -20,6 +20,24 @@ def _find_project_root(start: Path | None = None) -> Path:
 PROJECT_ROOT = _find_project_root(Path(__file__).parent)
 
 
+def _load_dotenv(path: Path) -> None:
+    """Minimal .env loader. KEY=VALUE per line; # for comments. No quote handling
+    (API keys don't need it). Existing env vars take precedence over the file
+    (shell exports always win)."""
+    if not path.is_file():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+# Load .env once at import so every entry point sees the same env.
+_load_dotenv(PROJECT_ROOT / ".env")
+
+
 @dataclass(frozen=True)
 class Config:
     project_root: Path
