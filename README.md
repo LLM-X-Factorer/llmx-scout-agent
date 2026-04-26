@@ -65,6 +65,12 @@ uv run scout pack 'https://news.ycombinator.com/item?id=12345'
 
 # 7. 校准评分提示词
 uv run scout score-tune -v
+
+# 8. 上线定时任务（macOS launchd，每天 9 / 15 / 21 跑）
+bash scripts/install_launchd.sh
+launchctl start com.llmxfactors.scout.discover   # 立刻跑一次验证
+tail -f logs/cron.log
+# 卸载：bash scripts/uninstall_launchd.sh
 ```
 
 ## 输出长这样
