@@ -13,6 +13,20 @@ Decision = Literal["packed", "low_score", "filtered_out", "failed", "resurge_pac
 _SCHEMA = Path(__file__).parent / "schema.sql"
 
 
+# Python 3.12 deprecated the implicit datetime <-> TIMESTAMP adapters.
+# Register explicit ISO-8601 ones so callers can keep passing datetimes.
+def _adapt_datetime(dt: datetime) -> str:
+    return dt.isoformat()
+
+
+def _convert_timestamp(raw: bytes) -> datetime:
+    return datetime.fromisoformat(raw.decode())
+
+
+sqlite3.register_adapter(datetime, _adapt_datetime)
+sqlite3.register_converter("TIMESTAMP", _convert_timestamp)
+
+
 def connect(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)

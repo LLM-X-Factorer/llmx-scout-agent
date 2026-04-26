@@ -9,6 +9,19 @@ RAG
 agent
 multi-agent
 /\bagents?\b/i => agents
+/\bAI\b/ => AI
+transformer
+diffusion
+embedding
+/generative AI/i => GenAI
+
+[Companies]
+OpenAI
+Anthropic
+DeepMind
+Mistral AI
+xAI
+Hugging Face
 
 [Frameworks]
 LangChain
@@ -16,10 +29,14 @@ LangGraph
 LlamaIndex
 DSPy
 /cline/i
+Cursor
+Copilot
+/coding (agent|assistant|tool)/i => coding agent
 
 [Models]
 GPT
 GPT-5
+ChatGPT
 Claude
 Gemini
 Llama
@@ -36,6 +53,7 @@ vLLM
 quantization
 KV cache
 context window
+GPU
 
 [Reasoning]
 reasoning

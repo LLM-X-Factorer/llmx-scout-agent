@@ -236,21 +236,22 @@ def discover(
     candidates = hn.discover(limit)
     typer.echo(f"got {len(candidates)} candidates")
 
-    # Keyword filter
+    # Keyword filter — dry-run must not write anything to the db
     passed: list[tuple[models.Candidate, dict]] = []
     for cand in candidates:
         if db.get_dedup(conn, cand.url_hash) is not None:
             continue
         names, groups, score_count = keywords.match(cand.title, cand.snippet)
         if not names:
-            db.upsert_dedup(
-                conn,
-                url_hash=cand.url_hash,
-                canonical_url=cand.original_url,
-                seen_at=datetime.now(UTC),
-                metrics=cand.metrics,
-            )
-            db.record_decision(conn, url_hash=cand.url_hash, decision="filtered_out")
+            if not dry_run:
+                db.upsert_dedup(
+                    conn,
+                    url_hash=cand.url_hash,
+                    canonical_url=cand.original_url,
+                    seen_at=datetime.now(UTC),
+                    metrics=cand.metrics,
+                )
+                db.record_decision(conn, url_hash=cand.url_hash, decision="filtered_out")
             continue
         cand.matched_keywords = names
         cand.keyword_groups = groups
@@ -261,10 +262,9 @@ def discover(
     if not passed:
         return
 
-    # LLM scoring
     if dry_run:
         for cand, _ in passed:
-            typer.echo(f"  [dry-run] would score: {cand.title}")
+            typer.echo(f"  [dry-run] {cand.matched_keywords}: {cand.title}")
         return
 
     prompt = sc.load_prompt(c.scoring_prompt_path)
