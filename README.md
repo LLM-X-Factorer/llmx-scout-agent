@@ -74,6 +74,23 @@ tail -f logs/cron.log
 # 卸载：bash scripts/uninstall_launchd.sh
 ```
 
+## 部署到一台全新 Mac（例如 24h Mac mini）
+
+```bash
+# 在新机器上：
+git clone https://github.com/LLM-X-Factorer/llmx-scout-agent
+cd llmx-scout-agent
+
+# 一条命令完成依赖 + .env + doctor + 烟测 + launchd 安装
+bash scripts/bootstrap.sh --packs-repo git@github.com:LLM-X-Factorer/llmx-scout-packs.git
+
+# 第一次跑会创建 .env，让你填好后再跑一次。
+# --packs-repo 可省略，但开启后 scout 会把每次产出的 pack 自动 push 到独立仓库
+# --no-launchd 跳过定时任务安装（适合本地开发）
+```
+
+脚本是幂等的：再跑一次只会修复漂移（重装 plist、重跑 uv sync、重做 doctor），不会破坏已有数据。
+
 ## Pack 投递（可选，但推荐用于多机部署）
 
 scout 默认把 pack 写到 `output/packs/`（gitignored）。如果你想让下游 agent 在

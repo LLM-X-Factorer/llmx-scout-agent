@@ -632,7 +632,21 @@ def doctor() -> None:
     check("project root", c.project_root.exists())
     check("scoring prompt", c.scoring_prompt_path.exists(), str(c.scoring_prompt_path))
     check("keywords config", c.keywords_path.exists(), str(c.keywords_path))
-    check("ANTHROPIC_API_KEY", bool(c.anthropic_api_key), "export it in your shell")
+
+    provider = os.environ.get("SCOUT_LLM_PROVIDER", "anthropic").lower()
+    if provider == "openrouter":
+        check(
+            "OPENROUTER_API_KEY (provider=openrouter)",
+            bool(os.environ.get("OPENROUTER_API_KEY")),
+            "set it in .env or shell",
+        )
+    else:
+        check(
+            "ANTHROPIC_API_KEY (provider=anthropic)",
+            bool(c.anthropic_api_key),
+            "set it in .env or shell, OR set SCOUT_LLM_PROVIDER=openrouter",
+        )
+
     try:
         db.connect(c.db_path).close()
         check("sqlite write", True)
