@@ -1,0 +1,52 @@
+# scout keyword config — TrendRadar-style mini DSL
+# Lines starting with # are comments. Sections in [brackets] are groups.
+# +word = must also be present, !word = blocks the candidate, /pat/ = regex.
+# token => Display Name lets you label the matched display string.
+
+[Foundations]
+LLM
+RAG
+agent
+multi-agent
+/\bagents?\b/i => agents
+
+[Frameworks]
+LangChain
+LangGraph
+LlamaIndex
+DSPy
+/cline/i
+
+[Models]
+GPT
+GPT-5
+Claude
+Gemini
+Llama
+/llama-?\d/i => llama-N
+Mistral
+DeepSeek
+Qwen
+
+[Infra]
+inference
+fine-tuning
+vLLM
+/\bMoE\b/ => MoE
+quantization
+KV cache
+context window
+
+[Reasoning]
+reasoning
+test-time
+chain-of-thought
+agentic
+/o\d-(mini|preview)/i => o-series
+
+# Cross-group filters: drop courses, sponsored content, low-signal noise.
+!course
+!coupon
+!free download
+!训练营
+!sponsored
