@@ -284,8 +284,28 @@ def discover(
     client = _llm_client(c)
     written = 0
     for cand, _ in passed[: c.max_candidates_per_run]:
+        # Prefetch a small comment preview so the scorer has real signal beyond
+        # the title. HN top stories rarely have a `text` body, so without this
+        # the LLM scores blind. Cost: 1 fetch_item + 3 fetch_item calls per
+        # keyword-passed candidate (HN's API is uncapped and self-throttled).
+        item = hn.fetch_item(int(cand.external_id))
+        if not item:
+            typer.echo(f"  ! HN item vanished: {cand.external_id}", err=True)
+            continue
+        preview_records = [
+            cmts.CommentRecord(
+                author=cm.get("by") or "unknown",
+                text_md=cmts.hn_html_to_text(cm.get("text")),
+                score=None,
+            )
+            for cm in hn.fetch_top_comments(item, 3)
+        ]
+        comments_preview = "\n".join(
+            f"- @{r.author}: {r.text_md.replace(chr(10), ' ')[:200]}" for r in preview_records
+        )
+
         try:
-            score = sc.score(cand, prompt=prompt, client=client)
+            score = sc.score(cand, prompt=prompt, client=client, comments_preview=comments_preview)
         except Exception as e:
             typer.echo(f"  ! scoring failed for {cand.title!r}: {e}", err=True)
             db.upsert_dedup(
@@ -303,11 +323,7 @@ def discover(
             _persist(conn, candidate=cand, score=score, pack_id=None, decision="low_score")
             continue
 
-        # Harvest only if it passed the threshold
-        item = hn.fetch_item(int(cand.external_id))
-        if not item:
-            typer.echo(f"  ! HN item vanished: {cand.external_id}", err=True)
-            continue
+        # Threshold passed — full harvest (we already have the item)
         h = _harvest_hn(item, http=http, c=c)
         pack_obj = packer.assemble(
             cand,
