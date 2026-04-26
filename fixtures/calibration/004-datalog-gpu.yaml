@@ -1,0 +1,34 @@
+id: datalog-gpu
+description: 学术 paper（Datalog on GPU）— 高信息密度但低 judgment 空间
+
+input:
+  platform: hacker_news
+  title: "Optimizing Datalog for the GPU"
+  primary_url: "https://news.ycombinator.com/item?id=47899000"
+  original_url: "https://dl.acm.org/doi/..."
+  metrics:
+    hn_score: 95
+    hn_comments: 8
+  matched_keywords: ["GPU"]
+  comments_preview: |
+    - @user1: Souffle is the standard production Datalog engine; this work moves the dial.
+    - @user2: Related: Differential Datalog from VMware. Also relevant for incremental queries.
+    - @user3: Cool, but where's the open-source repo?
+
+expected:
+  final_score: 4.0
+  layer: 转化层
+  judgment_seed_keywords: []
+
+tolerance:
+  score: 1.5
+  layer_strict: false
+
+notes: |
+  中低分（3.5-5）。Paper 类内容信息密度天然高（有可复现实验、benchmark），
+  但 HN 上学术 paper 的评论通常都是引介与同类项目对比，缺乏对立观点
+  和反直觉判断。judgment_space 偏低，但 info_density 拉一点。
+  适合给"工具/技术指南类"消费的转化层，不适合判断驱动的留存/引流。
+
+  这条是测试模型能否区分"密度 ≠ 判断空间"。如果模型因为 paper 看起来
+  专业就给高分，prompt 需要进一步强调维度独立。

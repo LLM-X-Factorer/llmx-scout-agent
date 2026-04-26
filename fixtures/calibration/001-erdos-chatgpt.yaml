@@ -1,0 +1,35 @@
+id: erdos-chatgpt
+description: 业余者用 ChatGPT 解 Erdős 问题 — 评论区有专家分歧
+
+input:
+  platform: hacker_news
+  title: "Amateur armed with ChatGPT solves an Erdős problem"
+  primary_url: "https://news.ycombinator.com/item?id=47903126"
+  metrics:
+    hn_score: 377
+    hn_comments: 239
+  matched_keywords: ["ChatGPT"]
+  comments_preview: |
+    - @ravenical: https://archive.ph/2w4fi
+    - @adamgordonbell: Here is the chat: don't search the internet. This is a test to see how well you can craft non-trivial...
+    - @CSMastermind: For the uninitiated, Paul Erdős was a pretty famous but very eccentric mathematician...
+
+expected:
+  final_score: 7.5
+  layer: 引流层
+  judgment_seed_keywords:
+    - 数学
+    - 提示
+    - 直觉
+    - 平权
+    - 能力
+
+tolerance:
+  score: 1.5
+  layer_strict: false
+
+notes: |
+  应该是高分（7-9）：评论区有专家级讨论（Erdős 问题难度光谱、数学
+  证明的『搜索 vs 构造』分类），素人 vs 传奇难题的反差天然是引流层
+  题材。判断空间在于"提示工程是否真的代偿了数学直觉，还是只是 LLM
+  恰好命中了某类问题"。

@@ -1,0 +1,38 @@
+id: openai-privacy-filter
+description: OpenAI 发布开源 PII 检测模型 — 评论区有开源替代方案对比
+
+input:
+  platform: hacker_news
+  title: "OpenAI Privacy Filter"
+  primary_url: "https://news.ycombinator.com/item?id=47870901"
+  original_url: "https://openai.com/index/introducing-openai-privacy-filter/"
+  metrics:
+    hn_score: 212
+    hn_comments: 42
+  matched_keywords: ["OpenAI"]
+  comments_preview: |
+    - @fzxu22: Working on this: https://github.com/KevinXuxuxu/anon_proxy, a sort of anonymization proxy to use with LLM providers. It does model + regex PII detection...
+    - @stratos123: Privacy Filter is a bidirectional token-classification model with span decoding. It begins from an autoregressive pretrained checkpoint...
+    - @nl: I'm no where near as smart as OpenAI of course, but I did build https://tools.nicklothian.com/webner/index.html that uses a BERT based named-entity-recognition model running in your browser...
+
+expected:
+  final_score: 7.0
+  layer: 留存层
+  judgment_seed_keywords:
+    - 隐私
+    - 合规
+    - 数据
+    - 飞轮
+    - 锁定
+    - 生态
+
+tolerance:
+  score: 1.5
+  layer_strict: false
+
+notes: |
+  中高分（6.5-8）：表面是 OpenAI 解决隐私合规，实则可读出"把合规
+  成本转嫁给生态 + 建立 PII 数据飞轮"的二阶解读。评论区有 2-3 个
+  独立项目作为反方证据（anon_proxy, BERT-NER browser），属于
+  practical_contradiction 信号。技术细节充足（双向 token 分类、
+  span 解码），适合留存层深度拆解。

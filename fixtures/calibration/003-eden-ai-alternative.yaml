@@ -1,0 +1,32 @@
+id: eden-ai-alternative
+description: 欧洲 AI 路由产品发布 — 纯产品公告，无判断空间
+
+input:
+  platform: hacker_news
+  title: "Eden AI – European Alternative to OpenRouter"
+  primary_url: "https://news.ycombinator.com/item?id=47900000"
+  metrics:
+    hn_score: 80
+    hn_comments: 18
+  matched_keywords: ["AI"]
+  comments_preview: |
+    - @user1: Cool to see EU options but pricing is unclear from the homepage.
+    - @user2: How is this different from running OpenRouter ourselves with a EU-based proxy?
+    - @user3: GDPR compliance details would help.
+
+expected:
+  final_score: 2.5
+  layer: unsure
+  judgment_seed_keywords: []
+
+tolerance:
+  score: 1.5
+  layer_strict: false
+
+notes: |
+  低分（< 4）。这是 scout 应该明确拒绝打包的典型：纯产品公告 + 地域
+  定位（"European Alternative"）+ 评论区都在问"和现有方案有何不同"，
+  说明连卖点都没传递清楚。判断空间几乎为零，judgment_seed 应该留空。
+
+  反测：如果模型给出强行编造的 seed（比如"表面是欧洲合规，实则是
+  欧洲 AI 主权焦虑"），说明 prompt 关于"宁可空也不要硬凑"的约束失效。

@@ -7,11 +7,13 @@ import re
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated
 
 import httpx
 import typer
 
+from scout import calibration as cal
 from scout import config as cfg
 from scout import models
 from scout.filter import keywords as kw
@@ -387,6 +389,75 @@ def show(pack_id: Annotated[str, typer.Argument()]) -> None:
             return
     typer.echo(f"pack {pack_id} not found", err=True)
     raise typer.Exit(1)
+
+
+_VERDICT_MARK = {
+    "match": "✓",
+    "score_off": "≠",
+    "layer_off": "L",
+    "seed_off": "S",
+    "multi": "✗",
+}
+
+
+@app.command(name="score-tune")
+def score_tune(
+    fixtures_dir: Annotated[
+        Path | None,
+        typer.Option("--fixtures", help="path to calibration fixture dir"),
+    ] = None,
+    only: Annotated[
+        str | None, typer.Option("--only", help="run only fixtures whose id contains this substring")
+    ] = None,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="print model reasoning")] = False,
+) -> None:
+    """Run the current scoring prompt against calibration fixtures and report drift.
+
+    Use this whenever you touch prompts/scoring.md, or when you suspect the
+    model has changed behavior. Add fixtures by dropping YAML files into
+    fixtures/calibration/ — see that dir's README.md.
+    """
+    c = cfg.load()
+    fdir = fixtures_dir or (c.project_root / "fixtures" / "calibration")
+    if not fdir.is_dir():
+        typer.echo(f"no fixtures dir at {fdir}", err=True)
+        raise typer.Exit(2)
+
+    fixtures = cal.load_fixtures(fdir)
+    if only:
+        fixtures = [f for f in fixtures if only in f.id]
+    if not fixtures:
+        typer.echo("no fixtures matched", err=True)
+        raise typer.Exit(2)
+
+    prompt = sc.load_prompt(c.scoring_prompt_path, model_override=os.environ.get("SCOUT_LLM_MODEL"))
+    client = _llm_client(c)
+
+    typer.echo(f"running {len(fixtures)} fixtures against prompt {prompt.version} ({prompt.model})")
+    typer.echo()
+    typer.echo(f"{'':<2} {'id':<28} {'expected':>8} {'actual':>7} {'Δ':>6}  layer (got/exp)  notes")
+    typer.echo("-" * 110)
+
+    report = cal.run(fixtures, prompt=prompt, client=client)
+    for d in report.diffs:
+        mark = _VERDICT_MARK[d.verdict]
+        layers = f"{d.actual.suggested_layer}/{d.fixture.expected.layer}"
+        notes = "; ".join(d.failures) if d.failures else ""
+        typer.echo(
+            f"{mark:<2} {d.fixture.id:<28} {d.fixture.expected.final_score:>8.1f} "
+            f"{d.actual.final_score:>7.1f} {d.score_delta:>+6.1f}  {layers:<16}  {notes}"
+        )
+        if verbose:
+            typer.echo(f"     seed:    {d.actual.judgment_seed or '(empty)'}")
+            typer.echo(f"     reason:  {d.actual.reasoning}")
+
+    typer.echo()
+    typer.echo(
+        f"matches: {report.matches}/{report.total}   "
+        f"mean |Δ|: {report.mean_abs_delta:.2f}   "
+        f"max |Δ|: {report.max_abs_delta:.2f}"
+    )
+    raise typer.Exit(0 if report.matches == report.total else 1)
 
 
 @app.command()
