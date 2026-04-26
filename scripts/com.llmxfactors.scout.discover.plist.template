@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+    Template — install_launchd.sh substitutes the placeholders at install
+    time so the generated plist matches the actual user, project location,
+    and Homebrew prefix on the target Mac. Do NOT install this file directly.
+-->
 <plist version="1.0">
 <dict>
     <key>Label</key>
     <string>com.llmxfactors.scout.discover</string>
 
-    <!-- Run scout from the project's uv-managed venv. PATH includes Homebrew
-         because launchd starts with a minimal PATH. -->
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/uv</string>
+        <string>@@UV_BIN@@</string>
         <string>run</string>
         <string>scout</string>
         <string>discover</string>
@@ -17,22 +20,17 @@
         <string>50</string>
     </array>
 
-    <!-- WorkingDirectory must be the project root so scout finds .env,
-         config/, prompts/, etc. via its _find_project_root() helper. -->
     <key>WorkingDirectory</key>
-    <string>/Users/liu/Projects/llmx-scout-agent</string>
+    <string>@@PROJECT_ROOT@@</string>
 
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <string>@@PATH@@</string>
         <key>HOME</key>
-        <string>/Users/liu</string>
+        <string>@@HOME@@</string>
     </dict>
 
-    <!-- Trigger 3 times daily: covers overnight US, US morning, US prime time.
-         If the Mac is asleep at trigger time, launchd will run it once the
-         system wakes (catch-up semantics). -->
     <key>StartCalendarInterval</key>
     <array>
         <dict>
@@ -49,20 +47,17 @@
         </dict>
     </array>
 
-    <!-- Don't fire on launchctl load — would waste LLM quota when reinstalling. -->
     <key>RunAtLoad</key>
     <false/>
 
-    <!-- One run at a time even if the trigger overlaps a still-running job. -->
     <key>AbandonProcessGroup</key>
     <false/>
 
     <key>StandardOutPath</key>
-    <string>/Users/liu/Projects/llmx-scout-agent/logs/cron.log</string>
+    <string>@@PROJECT_ROOT@@/logs/cron.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/liu/Projects/llmx-scout-agent/logs/cron.log</string>
+    <string>@@PROJECT_ROOT@@/logs/cron.log</string>
 
-    <!-- If the job exits with a crash, don't keep restarting it. -->
     <key>KeepAlive</key>
     <false/>
 </dict>
