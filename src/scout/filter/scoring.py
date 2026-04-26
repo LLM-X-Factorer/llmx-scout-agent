@@ -40,7 +40,7 @@ _USER_RE = re.compile(r"##\s*USER[^\n]*\n(.*?)(?=\n## |\Z)", re.DOTALL | re.IGNO
 _SYSTEM_RE = re.compile(r"##\s*SYSTEM[^\n]*\n(.*?)(?=\n## |\Z)", re.DOTALL | re.IGNORECASE)
 
 
-def load_prompt(path: Path) -> PromptBundle:
+def load_prompt(path: Path, *, model_override: str | None = None) -> PromptBundle:
     raw = path.read_text(encoding="utf-8")
     m = _FRONTMATTER_RE.match(raw)
     if not m:
@@ -53,7 +53,7 @@ def load_prompt(path: Path) -> PromptBundle:
         raise ValueError(f"prompt file {path} is missing ## SYSTEM or ## USER section")
     return PromptBundle(
         version=str(meta["version"]),
-        model=str(meta.get("model", "claude-sonnet-4-6")),
+        model=model_override or str(meta.get("model", "claude-sonnet-4-6")),
         temperature=float(meta.get("temperature", 0.2)),
         max_tokens=int(meta.get("max_tokens", 1200)),
         system=sys_m.group(1).strip(),
@@ -137,7 +137,7 @@ def score(
     return parse_response(raw, prompt_version=prompt.version)
 
 
-# ---- real Anthropic client adapter ----
+# ---- production client (Anthropic) ----
 
 
 class AnthropicClient:
@@ -160,3 +160,50 @@ class AnthropicClient:
         # The SDK returns a list of content blocks; we only ever ask for text.
         chunks = [getattr(b, "text", "") for b in msg.content]
         return "".join(chunks)
+
+
+# ---- dev/test client (OpenRouter, OpenAI-compatible) ----
+#
+# This exists so we can exercise the pipeline without an Anthropic key.
+# Production stays on Anthropic; see CLAUDE.md decision log.
+
+
+class OpenRouterClient:
+    """OpenAI-compatible chat completions against openrouter.ai."""
+
+    BASE = "https://openrouter.ai/api/v1"
+
+    def __init__(self, api_key: str, *, timeout: float = 60.0) -> None:
+        import httpx
+
+        self._client = httpx.Client(
+            base_url=self.BASE,
+            timeout=timeout,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                # OpenRouter recommends these for attribution / abuse handling.
+                "HTTP-Referer": "https://github.com/LLM-X-Factorer/llmx-scout-agent",
+                "X-Title": "llmx-scout-agent",
+            },
+        )
+
+    def complete(
+        self, *, model: str, system: str, user: str, temperature: float, max_tokens: int
+    ) -> str:
+        r = self._client.post(
+            "/chat/completions",
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            },
+        )
+        r.raise_for_status()
+        body = r.json()
+        # OpenAI-compatible: choices[0].message.content
+        return body["choices"][0]["message"]["content"] or ""

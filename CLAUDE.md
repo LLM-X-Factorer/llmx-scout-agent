@@ -158,6 +158,19 @@ scout 与下游 `llmx-advocate-agent` 通过 source pack 文件通信。
 - **拍板人**：用户（2026-04-26）
 - **落地**：`docs/specification.md` §11
 
+### 2026-04-26 · OpenRouter 作为开发期 LLM 客户端（已拍板）
+
+- **决策**：在 `scout.filter.scoring` 中提供 `OpenRouterClient`，通过 `SCOUT_LLM_PROVIDER=openrouter` + `OPENROUTER_API_KEY` + 可选 `SCOUT_LLM_MODEL` 切换。默认仍是 Anthropic
+- **为什么破例**：用户没有 Anthropic API key，需要先看真实 pack 输出做 prompt 校准
+- **边界**：
+    - 这是 dev/test 路径，**不替代** Claude 作为生产 provider
+    - 不引入新的依赖（直接用 httpx，OpenRouter 走 OpenAI 兼容 API）
+    - 不引入抽象层（不上 LiteLLM）—— 与"不做多 provider"的核心精神保持一致
+    - 不在 `scout doctor` 里把 OpenRouter 当一等公民检测
+- **如果未来想再加第三个 provider**：先回答"为什么 Anthropic + OpenRouter 不够"，再开 PR
+- **拍板人**：用户（2026-04-26）
+- **落地**：`src/scout/filter/scoring.py` `OpenRouterClient`；`cli._llm_client()` 切换逻辑
+
 ### 2026-04-26 · 长期标题相似度去重不做（V0.1）
 
 - **决策**：URL hash 强去重；标题相似度只做"标注关联"不做"合并丢弃"

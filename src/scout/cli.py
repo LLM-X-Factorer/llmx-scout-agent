@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -36,6 +37,18 @@ def _http(c: cfg.Config) -> httpx.Client:
 
 
 def _llm_client(c: cfg.Config) -> sc.LLMClient:
+    """Pick the LLM client.
+
+    Defaults to Anthropic. Set SCOUT_LLM_PROVIDER=openrouter to use OpenRouter
+    (development / testing only — the production design is Anthropic-only;
+    see CLAUDE.md decision log).
+    """
+    provider = os.environ.get("SCOUT_LLM_PROVIDER", "anthropic").lower()
+    if provider == "openrouter":
+        key = os.environ.get("OPENROUTER_API_KEY")
+        if not key:
+            raise typer.BadParameter("OPENROUTER_API_KEY env var is not set")
+        return sc.OpenRouterClient(key)
     if not c.anthropic_api_key:
         raise typer.BadParameter("ANTHROPIC_API_KEY env var is not set")
     return sc.AnthropicClient(c.anthropic_api_key)
@@ -178,7 +191,7 @@ def pack(
 
     score: models.ScoreResult | None = None
     if not no_score:
-        prompt = sc.load_prompt(c.scoring_prompt_path)
+        prompt = sc.load_prompt(c.scoring_prompt_path, model_override=os.environ.get("SCOUT_LLM_MODEL"))
         client = _llm_client(c)
         score = sc.score(
             candidate, prompt=prompt, client=client, comments_preview=h.comments_preview
@@ -267,7 +280,7 @@ def discover(
             typer.echo(f"  [dry-run] {cand.matched_keywords}: {cand.title}")
         return
 
-    prompt = sc.load_prompt(c.scoring_prompt_path)
+    prompt = sc.load_prompt(c.scoring_prompt_path, model_override=os.environ.get("SCOUT_LLM_MODEL"))
     client = _llm_client(c)
     written = 0
     for cand, _ in passed[: c.max_candidates_per_run]:
