@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# uv
+.uv-cache/
+
+# Tooling
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Scout runtime artifacts
+output/packs/
+output/quarantine/
+logs/
+data/*.sqlite
+data/*.sqlite-journal
+data/*.sqlite-wal
+data/*.sqlite-shm
+
+# Local secrets
+config/notify.local.toml
+config/scout.local.toml
+.env
+.env.local
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
