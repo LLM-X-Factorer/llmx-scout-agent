@@ -44,7 +44,12 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "RUF"]
-ignore = ["E501"]  # line length handled by formatter
+ignore = [
+    "E501",   # line length — handled by formatter
+    "RUF001", # ambiguous unicode in strings — we use Chinese intentionally
+    "RUF002", # ambiguous unicode in docstrings — same
+    "RUF003", # ambiguous unicode in comments — same
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -76,7 +76,9 @@ def render_user(template: str, candidate: Candidate, *, comments_preview: str = 
         "primary_url": candidate.primary_url,
         "original_url": candidate.original_url,
         "author": candidate.author or "(unknown)",
-        "published_at": candidate.published_at.isoformat() if candidate.published_at else "(unknown)",
+        "published_at": candidate.published_at.isoformat()
+        if candidate.published_at
+        else "(unknown)",
         "metrics_summary": _format_metrics(candidate.metrics),
         "matched_keywords": ", ".join(candidate.matched_keywords) or "(none)",
         "snippet": candidate.snippet or "(no snippet)",
