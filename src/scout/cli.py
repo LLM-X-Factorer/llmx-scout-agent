@@ -21,8 +21,12 @@ from scout.filter import scoring as sc
 from scout.harvest import comments as cmts
 from scout.harvest import fulltext as ft
 from scout.harvest import packer
+from scout.sources.github import GitHubTrendingSource
 from scout.sources.hacker_news import HackerNewsSource
+from scout.sources.reddit import DEFAULT_SUBREDDITS, RedditSource
 from scout.store import db
+
+ALL_SOURCES = ("hacker_news", "github", "reddit")
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, help="llmx-scout-agent CLI")
 
@@ -96,6 +100,62 @@ def _harvest_hn(item: dict, *, http: httpx.Client, c: cfg.Config) -> HarvestResu
         for cm in raw_comments
     ]
     return HarvestResult(extr.text, extr.method, extr.warnings, records)
+
+
+def _harvest_gh(cand: models.Candidate, *, http: httpx.Client) -> HarvestResult:
+    """README extraction via trafilatura on the repo URL.
+
+    GitHub server-renders README markdown into the repo page, so trafilatura
+    picks up the rendered content. No "comments" — repo issues/PRs are too
+    noisy and off-topic for scout's purpose.
+    """
+    extr = ft.extract(cand.primary_url, client=http)
+    return HarvestResult(extr.text, extr.method, extr.warnings, comments=[])
+
+
+def _harvest_reddit(
+    cand: models.Candidate, *, reddit: RedditSource, http: httpx.Client, c: cfg.Config
+) -> HarvestResult:
+    """Reddit harvest: fulltext from external link (or selftext) + top comments.
+
+    For link posts, original_url points to an external article — extract that.
+    For selfposts (selftext), the snippet IS the body, but we still want the
+    full version: re-pull the post detail to get untruncated selftext.
+    """
+    if cand.primary_url == cand.original_url:
+        # selfpost — fulltext is the (full) selftext, fetched from the comments
+        # endpoint which includes the post detail
+        # We have the comment endpoint already; reuse it
+        kids = reddit.fetch_top_comments(cand.external_id, c.max_comments_per_pack)
+        # selftext lives in the post listing, not comments — second fetch needed
+        r = http.get(f"https://www.reddit.com/comments/{cand.external_id}.json", params={"limit": 1})
+        try:
+            r.raise_for_status()
+            post = r.json()[0]["data"]["children"][0]["data"]
+            fulltext = post.get("selftext") or None
+            method = "api"
+            warnings: list[str] = []
+        except Exception as e:
+            fulltext = None
+            method = "failed"
+            warnings = [f"reddit selftext fetch failed: {e}"]
+    else:
+        # link post — extract the linked article
+        extr = ft.extract(cand.original_url, client=http)
+        fulltext = extr.text
+        method = extr.method
+        warnings = extr.warnings
+        kids = reddit.fetch_top_comments(cand.external_id, c.max_comments_per_pack)
+
+    records = [
+        cmts.CommentRecord(
+            author=cd.get("author") or "unknown",
+            text_md=(cd.get("body") or "").strip(),
+            score=cd.get("score"),
+        )
+        for cd in kids
+    ]
+    return HarvestResult(fulltext, method, warnings, records)
 
 
 def _build_candidate_from_hn_item(item: dict) -> models.Candidate:
@@ -241,14 +301,45 @@ def discover(
     conn = db.connect(c.db_path)
     keywords = kw.load_file(c.keywords_path)
 
-    enabled = set(sources) if sources else {"hacker_news"}
-    if "hacker_news" not in enabled:
-        typer.echo("only hacker_news is wired up in this build", err=True)
+    enabled = set(sources) if sources else set(ALL_SOURCES)
+    unknown = enabled - set(ALL_SOURCES)
+    if unknown:
+        typer.echo(f"unknown source(s): {sorted(unknown)}; available: {ALL_SOURCES}", err=True)
         raise typer.Exit(2)
 
     hn = HackerNewsSource(client=http)
-    typer.echo(f"discovering up to {limit} HN stories...")
-    candidates = hn.discover(limit)
+    gh = GitHubTrendingSource(client=http)
+    reddit_subs = tuple(c.extra.get("reddit", {}).get("subreddits") or DEFAULT_SUBREDDITS)
+    reddit = RedditSource(client=http, subreddits=reddit_subs)
+
+    candidates: list[models.Candidate] = []
+    if "hacker_news" in enabled:
+        typer.echo(f"discovering up to {limit} HN stories...")
+        try:
+            candidates.extend(hn.discover(limit))
+        except Exception as e:
+            typer.echo(f"  ! hacker_news discover failed: {e}", err=True)
+            db.mark_source_fail(conn, "hacker_news", datetime.now(UTC))
+        else:
+            db.mark_source_ok(conn, "hacker_news", datetime.now(UTC))
+    if "github" in enabled:
+        typer.echo("discovering GitHub trending...")
+        try:
+            candidates.extend(gh.discover(limit))
+        except Exception as e:
+            typer.echo(f"  ! github discover failed: {e}", err=True)
+            db.mark_source_fail(conn, "github", datetime.now(UTC))
+        else:
+            db.mark_source_ok(conn, "github", datetime.now(UTC))
+    if "reddit" in enabled:
+        typer.echo(f"discovering Reddit ({', '.join(reddit_subs)})...")
+        try:
+            candidates.extend(reddit.discover(limit))
+        except Exception as e:
+            typer.echo(f"  ! reddit discover failed: {e}", err=True)
+            db.mark_source_fail(conn, "reddit", datetime.now(UTC))
+        else:
+            db.mark_source_ok(conn, "reddit", datetime.now(UTC))
     typer.echo(f"got {len(candidates)} candidates")
 
     # Keyword filter — dry-run must not write anything to the db
@@ -286,25 +377,40 @@ def discover(
     client = _llm_client(c)
     written = 0
     for cand, _ in passed[: c.max_candidates_per_run]:
-        # Prefetch a small comment preview so the scorer has real signal beyond
-        # the title. HN top stories rarely have a `text` body, so without this
-        # the LLM scores blind. Cost: 1 fetch_item + 3 fetch_item calls per
-        # keyword-passed candidate (HN's API is uncapped and self-throttled).
-        item = hn.fetch_item(int(cand.external_id))
-        if not item:
-            typer.echo(f"  ! HN item vanished: {cand.external_id}", err=True)
-            continue
-        preview_records = [
-            cmts.CommentRecord(
-                author=cm.get("by") or "unknown",
-                text_md=cmts.hn_html_to_text(cm.get("text")),
-                score=None,
+        # Per-platform prefetch: capture anything we'll reuse during harvest
+        # (avoid double-fetching), and build the comment_preview the scorer sees.
+        hn_item: dict | None = None
+        comments_preview = ""
+        if cand.source_platform == "hacker_news":
+            hn_item = hn.fetch_item(int(cand.external_id))
+            if not hn_item:
+                typer.echo(f"  ! HN item vanished: {cand.external_id}", err=True)
+                continue
+            preview_records = [
+                cmts.CommentRecord(
+                    author=cm.get("by") or "unknown",
+                    text_md=cmts.hn_html_to_text(cm.get("text")),
+                    score=None,
+                )
+                for cm in hn.fetch_top_comments(hn_item, 3)
+            ]
+            comments_preview = "\n".join(
+                f"- @{r.author}: {r.text_md.replace(chr(10), ' ')[:200]}"
+                for r in preview_records
             )
-            for cm in hn.fetch_top_comments(item, 3)
-        ]
-        comments_preview = "\n".join(
-            f"- @{r.author}: {r.text_md.replace(chr(10), ' ')[:200]}" for r in preview_records
-        )
+        elif cand.source_platform == "reddit":
+            try:
+                kids = reddit.fetch_top_comments(cand.external_id, 3)
+            except Exception as e:
+                typer.echo(f"  ! reddit comments fetch failed for {cand.external_id}: {e}", err=True)
+                kids = []
+            comments_preview = "\n".join(
+                f"- @{(cm.get('author') or 'unknown')}: "
+                f"{(cm.get('body') or '').replace(chr(10), ' ')[:200]}"
+                for cm in kids
+            )
+        # GitHub: nothing to prefetch — repo description is already in cand.snippet
+        # and gets passed to the scorer via the prompt template.
 
         try:
             score = sc.score(cand, prompt=prompt, client=client, comments_preview=comments_preview)
@@ -325,8 +431,18 @@ def discover(
             _persist(conn, candidate=cand, score=score, pack_id=None, decision="low_score")
             continue
 
-        # Threshold passed — full harvest (we already have the item)
-        h = _harvest_hn(item, http=http, c=c)
+        # Threshold passed — platform-specific harvest
+        if cand.source_platform == "hacker_news":
+            assert hn_item is not None  # always set when we reach here for HN
+            h = _harvest_hn(hn_item, http=http, c=c)
+        elif cand.source_platform == "github":
+            h = _harvest_gh(cand, http=http)
+        elif cand.source_platform == "reddit":
+            h = _harvest_reddit(cand, reddit=reddit, http=http, c=c)
+        else:
+            typer.echo(f"  ! no harvester for {cand.source_platform}", err=True)
+            continue
+
         pack_obj = packer.assemble(
             cand,
             fulltext_md=h.fulltext_md,

@@ -1,0 +1,33 @@
+id: reddit-deepseek-kv
+description: Reddit 技术帖（DeepSeek V4 KV cache 计算）— 高判断空间样本
+
+input:
+  platform: reddit
+  title: "The exact KV cache usage of DeepSeek V4"
+  primary_url: "https://reddit.com/r/LocalLLaMA/comments/1svzlog/the_exact_kv_cache_usage_of_deepseek_v4/"
+  metrics:
+    reddit_upvotes: 71
+    reddit_comments: 34
+  matched_keywords: ["transformer", "Llama", "DeepSeek", "KV cache"]
+  comments_preview: |
+    - @user1: vLLM 官方 breakdown 算出来是 7.879x，不是 9.5x
+    - @user2: V4 Pro 文件体积 866GB FP8，可能要 FP4+FP8 混合精度才能跑
+    - @user3: 这意味着内存墙从 attention 挪到 FFN/router
+
+expected:
+  final_score: 7.5
+  layer: 留存层
+  judgment_seed_keywords: []   # 见 README on seed keywords
+
+tolerance:
+  score: 1.5
+  layer_strict: false
+
+notes: |
+  应该是高分（7-9）：
+  - 信息密度极高（具体表格、可复现的计算、跨版本对比）
+  - 有真实争议（数字方法论分歧；FP4 vs FP8 实践 trade-off）
+  - judgment 空间极大（"工程胜利"表象 vs "瓶颈转移"实质）
+
+  这是 Reddit 技术深帖的典型代表 —— 与 HN 主流公告类不同，r/LocalLLaMA 的
+  深技术讨论是布道者最高价值的信号源之一。

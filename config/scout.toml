@@ -8,3 +8,6 @@ fulltext_max_chars = 50000
 http_timeout_s = 20.0
 
 anthropic_model = "claude-sonnet-4-6"
+
+[reddit]
+subreddits = ["LocalLLaMA", "MachineLearning", "singularity"]

@@ -28,7 +28,7 @@ scout 是分析师的素材准备员，不是分析师本身。
 [ Discover ] → [ Filter & Score ] → [ Harvest & Pack ] → [ Notify (可选) ]
 ```
 
-- **Discover**：HN Firebase API、GitHub Trending、Reddit JSON 端点
+- **Discover**：HN Firebase API、GitHub Trending（HTML scrape）、Reddit JSON（默认 r/LocalLLaMA, r/MachineLearning, r/singularity，可在 `config/scout.toml` 改）
 - **Filter & Score**：关键词初筛（语法借鉴 [TrendRadar](https://github.com/sansan0/TrendRadar)） → Claude LLM 三维评分
 - **Harvest & Pack**：原文 markdown 化、评论 Top 5、相关讨论交叉链接，组装成符合 schema 的 source pack 文件
 - **Notify**：可选层（macOS 本地通知 / 钉钉 / 邮件），任何通道失败都不影响主流水线
@@ -53,8 +53,9 @@ cp .env.example .env
 # 3. 自检
 uv run scout doctor
 
-# 4. 跑一次：自动发现 → 关键词初筛 → LLM 评分 → 写 pack
+# 4. 跑一次：自动发现（HN + GitHub + Reddit）→ 关键词初筛 → LLM 评分 → 写 pack
 uv run scout discover --limit 30
+# 限定单源：--source hacker_news / --source github / --source reddit（可重复）
 
 # 5. 看结果
 uv run scout list --since today
@@ -164,8 +165,9 @@ scout_analysis:
 ### 已规划（GitHub issues 跟踪）
 
 - [ ] [#1](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/1) Score 阈值边界波动 ±0.4
-- [ ] [#2](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/2) GitHub Trending source
-- [ ] [#3](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/3) Reddit source
+- [x] [#2](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/2) GitHub Trending source
+- [x] [#3](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/3) Reddit source
+- [ ] [#7](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/7) Floor rule fires inconsistently with judgment_space score
 - [ ] [#4](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/4) 重评机制（spec §11）
 - [ ] [#5](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/5) cron / launchd 上线
 - [ ] [#6](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/6) Prompt v0.2（用 20 条真实历史样本校准）
