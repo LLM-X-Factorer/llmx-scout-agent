@@ -22,7 +22,8 @@ from scout.utils.slug import slugify
 
 
 def build_pack_id(candidate: Candidate, *, today: datetime, suffix: str | None = None) -> str:
-    base = f"{candidate.source_platform.replace('_', '-')}-{today:%Y-%m-%d}-{candidate.external_id}"
+    safe_id = candidate.external_id.replace("/", "-")  # GitHub owner/repo → owner-repo
+    base = f"{candidate.source_platform.replace('_', '-')}-{today:%Y-%m-%d}-{safe_id}"
     return f"{base}-{suffix}" if suffix else base
 
 

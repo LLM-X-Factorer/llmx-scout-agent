@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
 
-from scout.harvest.packer import assemble, to_markdown, write_pack
+from scout.harvest.packer import assemble, build_pack_id, to_markdown, write_pack
 from scout.models import Candidate, ControversySignal, ScoreResult
 
 
@@ -82,6 +83,44 @@ def test_assemble_without_score_marks_unsure(tmp_path: Path):
     assert "建议层级" in md
     assert "unsure" in md
     assert "（未生成）" in md  # no judgment_seed
+
+
+def _github_candidate() -> Candidate:
+    return Candidate(
+        source_platform="github",
+        external_id="mattpocock/skills",
+        primary_url="https://github.com/mattpocock/skills",
+        original_url="https://github.com/mattpocock/skills",
+        url_hash="hashgh1",
+        title="mattpocock/skills — Agent Skills for Real Engineers",
+        metrics={"github_stars": 1200, "github_stars_today": 340},
+    )
+
+
+def test_build_pack_id_github_slash_is_sanitized():
+    """GitHub owner/repo external_id must not produce a '/' in pack_id (regression #11)."""
+    cand = _github_candidate()
+    today = datetime(2026, 4, 27, tzinfo=UTC)
+    pack_id = build_pack_id(cand, today=today)
+    assert "/" not in pack_id
+    assert pack_id == "github-2026-04-27-mattpocock-skills"
+
+
+def test_write_pack_github_creates_flat_file(tmp_path: Path):
+    """write_pack must create a flat .md file, not a nested dir, for GitHub repos (regression #11)."""
+    pack = assemble(
+        _github_candidate(),
+        fulltext_md="# body",
+        fulltext_method="trafilatura",
+        fulltext_warnings=[],
+        comments_render="",
+        comments_count=0,
+        score=None,
+    )
+    path = write_pack(pack, output_dir=tmp_path)
+    assert path.exists(), f"pack file not created: {path}"
+    assert path.is_file()
+    assert "/" not in path.name
 
 
 def test_failed_fulltext_renders_warning(tmp_path: Path):
