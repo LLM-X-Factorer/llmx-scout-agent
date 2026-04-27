@@ -495,7 +495,7 @@ def discover(
             pack_id=pack_obj.frontmatter.pack_id,
             decision="packed",
         )
-        typer.echo(f"  ✓ {score.final_score:.1f}: {path.relative_to(c.project_root)}")
+        typer.echo(f"  ✓ {score.final_score:.1f}: {path.relative_to(c.project_root, walk_up=True)}")
         written += 1
 
     typer.echo(f"done: wrote {written} pack(s)")
@@ -530,7 +530,7 @@ def list_packs(
             continue
         for f in sorted(date_dir.iterdir()):
             if f.suffix == ".md":
-                typer.echo(str(f.relative_to(c.project_root)))
+                typer.echo(str(f.relative_to(c.project_root, walk_up=True)))
 
 
 @app.command()

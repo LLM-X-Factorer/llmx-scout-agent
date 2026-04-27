@@ -68,6 +68,11 @@ def load(toml_path: Path | None = None) -> Config:
     if toml_path.exists():
         raw = tomllib.loads(toml_path.read_text())
 
+    # Merge local overrides (gitignored; machine-specific settings like output_dir)
+    local_path = toml_path.with_name("scout.local.toml")
+    if local_path.exists():
+        raw.update(tomllib.loads(local_path.read_text()))
+
     return Config(
         project_root=root,
         output_dir=root / raw.get("output_dir", "output/packs"),
