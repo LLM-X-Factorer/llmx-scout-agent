@@ -186,6 +186,17 @@ scout 与下游 `llmx-advocate-agent` 通过 source pack 文件通信。
 - **拍板人**：用户（2026-04-26）
 - **落地**：`docs/specification.md` §11
 
+### 2026-04-29 · 端到端流水线首次产出真实视频脚本（里程碑）
+
+- **结果**：advocate 用 pack `hacker-news-2026-04-28-47921626`（GPU 监控工具）跑完 P1 → P6，产出 18 scenes / 6m22s 视频脚本 + 2 个标题候选 + 159 字简介 + 时间戳。质量评估"看了想录"
+- **scout 端的关键确认**：
+    - `judgment_seed` 真的成了视频核心论点（"100% 利用率掩盖 90% 计算浪费"几乎一对一传承）
+    - `suggested_layer=留存` 是正确判断；advocate 的 tier-drift 机制（spec §5.7）反而是错的，强制改回留存才一次跑通
+    - trafilatura 抓的英文原文被 P3 准确消费（"Manya Ghobadi, MIT 教授"权威锚点真的进了视频）
+- **scout 字段权重重排**：`suggested_layer` 比我们之前认知的更重要 —— advocate 的 retry-driven tier-drift 不如 scout 的初始判断可靠
+- **意义**：scout → packs → advocate → 视频脚本 → 人 → B 站，完整链路验证通过。剩下的环节都是人工录制 + 上传，已不在工程化范围
+- **拍板人**：用户（2026-04-29）
+
 ### 2026-04-29 · 端到端契约验证通过 + 5 issues 解锁（已完成）
 
 - **决策**：advocate-agent 用 `deepseek/deepseek-chat` 真实跑 pack `reddit-2026-04-28-1sxch39` 通过 P1 → P1.5 → P2.5。Schema 通过、controversy_signals 被 P1.5 真实消费、judgment_seed 被 P2.5 真实启发
