@@ -226,9 +226,7 @@ scout_analysis:
 - [x] [#8](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/8) Pack delivery via git push 到独立仓库
 - [x] [#9](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/9) launchd plist 模板化
 - [x] [#10](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/10) Bootstrap script for new host
-
-**最高优先级（阻塞下游）**
-- [ ] [#16](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/16) **验证 advocate-agent 端到端消费一个真实 pack**（在它跑通之前其他 scout 优化都是押宝未验证的契约）
+- [x] [#16](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/16) advocate-agent 端到端契约验证通过（2026-04-29）
 
 **等数据积累 / 用户输入**
 - [ ] [#1](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/1) Score 阈值边界波动 ±0.4（等 ~30 条 score_history）

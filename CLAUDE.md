@@ -186,6 +186,17 @@ scout 与下游 `llmx-advocate-agent` 通过 source pack 文件通信。
 - **拍板人**：用户（2026-04-26）
 - **落地**：`docs/specification.md` §11
 
+### 2026-04-29 · 端到端契约验证通过 + 5 issues 解锁（已完成）
+
+- **决策**：advocate-agent 用 `deepseek/deepseek-chat` 真实跑 pack `reddit-2026-04-28-1sxch39` 通过 P1 → P1.5 → P2.5。Schema 通过、controversy_signals 被 P1.5 真实消费、judgment_seed 被 P2.5 真实启发
+- **暴露的两个真问题**：
+    - α: `judgment_seed` 同时进 frontmatter 和 body 的 hint 段，advocate uniqueness gate 把 hint 当 source 比对，attempt 1 必失败
+    - β: `overrode_seed: bool` 表达不了"采用主题但换视角"的中间态
+- **修复策略**：α 是 advocate 内部修（uniqueness 只看 source 段落），β 是 advocate 内部修（改 4 态枚举）。**scout 端不动代码，只在 schema doc 加 hint vs source 段落约定**（c2cff95）
+- **advocate 端实测后回归**：同 pack 同 attempt 1 现在 uniqueness 直接 PASS，218 → 226 单测全过
+- **意义**：scout 输出契约**实战验证通过**。所有此前被 #16 阻塞的 5 个 issue（#15 / #7 / #1 / #6 / #4）正式解锁可以推进
+- **拍板人**：用户（2026-04-29）
+
 ### 2026-04-28 · 心跳监测放在 packs 仓而非 scout 仓（已拍板）
 
 - **决策**：每天 22:00 HK 跑 GitHub Actions 检查 packs 仓当天有无新 commit；0 commit 则失败 + 开 issue + 默认邮件
