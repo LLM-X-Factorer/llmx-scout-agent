@@ -26,22 +26,26 @@
 
 ---
 
-## 当前进度速览（截至 2026-04-26 v0.1.0）
+## 当前进度速览（截至 2026-04-28 v0.1.1）
 
-**已发布**：
-- 三源 discover：HN + GitHub Trending + Reddit
+**生产就绪 + 已部署**：
+- 三源 discover：HN + GitHub Trending + Reddit（每日 9/15/21 HK 自动）
 - 评分（Anthropic 生产，OpenRouter 开发）
 - Harvest：trafilatura 正文抽取 + 平台特定评论抓取
-- 写盘：符合 schema 的 source pack
-- 自动 git delivery 到独立仓库 `llmx-scout-packs`
-- macOS launchd 每天 9/15/21 跑（plist 模板化，可移植到任意 Mac）
-- `scout score-tune` 校准 harness（5 条种子样本）
-- `bootstrap.sh` 一键初始化新 host
-- `.env` 自动加载
-- 71 单元测试 + 真跑端到端 + 真跑校准全过
-- 部署目标：HK Mac mini（用户次日上线）
+- 自动 git delivery 到独立仓库 `llmx-scout-packs`（HTTPS push 通过 collaborator 权限）
+- `scout score-tune` 校准 harness + 5 条种子样本
+- `bootstrap.sh` + plist 模板 → 任意 macOS host 一条命令上线
+- 75 单元测试 + 真跑校准 + 远程心跳监测（packs 仓 GitHub Actions）
 
-**未来工作走 GitHub issues**，不走本文件。决策日志只记"已经定下来"的设计选择，不记"待办/风险"。
+**生产实测数据（< 48 小时）**：
+- 26 packs / 2 天，全部 schema 合法
+- 平均 7.35 分，6/26 高分（≥ 8.0）
+- 平均 2.23 个 controversy_signals/pack
+- 0 抓取或推送故障
+
+**核心阻塞**：[#16](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/16) — 下游 advocate-agent 还没真消费过一个 pack，schema 是未实战验证的契约。所有 scout 内部优化（#15 / #7 / #1 / #6 / #4）暂停在这之后。
+
+**未来工作走 GitHub issues**，不走本文件。决策日志只记"已经定下来"的设计选择。
 
 当前 open issues: `gh issue list`
 
@@ -181,6 +185,27 @@ scout 与下游 `llmx-advocate-agent` 通过 source pack 文件通信。
 - **风险**：同一 URL 可能产生多版 pack；下游 advocate 需识别同 url_hash 多版本
 - **拍板人**：用户（2026-04-26）
 - **落地**：`docs/specification.md` §11
+
+### 2026-04-28 · 心跳监测放在 packs 仓而非 scout 仓（已拍板）
+
+- **决策**：每天 22:00 HK 跑 GitHub Actions 检查 packs 仓当天有无新 commit；0 commit 则失败 + 开 issue + 默认邮件
+- **为什么放 packs 仓而非 scout 仓**：心跳要观察的"产出"在 packs 仓；scout 仓的 main 不会因 mini 故障而变化
+- **不引入 push notification / Slack / Discord**：邮件已经是用户最常看的渠道，加多通道是过度工程
+- **拍板人**：用户（2026-04-28）
+- **落地**：`llmx-scout-packs/.github/workflows/heartbeat.yml`
+
+### 2026-04-28 · Cloud 迁移延后，mini 出问题再启动（已拍板）
+
+- **决策**：用户暂时无法操作 HK Mac mini（人不在 HK），但 mini 仍在自主跑。**不**预防性迁到 Railway / 腾讯云 Lighthouse 香港 / 等
+- **理由**：
+    - 实测 < 48h 产出 26 个高质量 packs，0 故障
+    - 已加心跳监测，故障立刻知情
+    - 提前迁是给已经能跑的系统瞎加复杂度
+- **真挂了再做**的两个候选方案，详见 issue 评论里的对比表：
+    - **Railway**（推荐）：原生 cron + 原生 secrets + git push 部署，1-2 小时上线，~$5/mo
+    - **腾讯云 Lighthouse 香港**：~25 RMB/mo，但要自配 docker / supercronic / SSH key
+- **代码冻结风险**：mini 上跑的代码就是 PR #14 之后的版本；今天后任何新 commit 到不了 mini，除非用户回 HK SSH 上去 git pull。可接受 — 当前没有阻塞性的代码改动等待
+- **拍板人**：用户（2026-04-28）
 
 ### 2026-04-26 · 部署目标 = HK Mac mini，不上 docker / Lighthouse（已拍板）
 

@@ -2,7 +2,7 @@
 
 > 为 AI 工程布道者准备的"每日选题侦察兵"。从海外 AI 圈的高质量信息源主动寻找有判断空间的选题，扒原文、扒讨论、写预判，输出标准化 source pack 文件给下游内容生产 agent 消费。
 
-**状态**：[v0.1.0](https://github.com/LLM-X-Factorer/llmx-scout-agent/releases) 已发布。HN + GitHub Trending + Reddit 三源端到端跑通；macOS launchd 每天 9/15/21 自动跑；pack 自动 push 到独立仓库 [`llmx-scout-packs`](https://github.com/LLM-X-Factorer/llmx-scout-packs)（私有）。剩余工作见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)。
+**状态**：[v0.1.1](https://github.com/LLM-X-Factorer/llmx-scout-agent/releases) — 已部署到香港 Mac mini 生产环境。HN + GitHub Trending + Reddit 三源每日 9/15/21 自动跑；pack 自动 push 到独立仓库 [`llmx-scout-packs`](https://github.com/LLM-X-Factorer/llmx-scout-packs)（私有）。两天产出 26 个 packs 全部 schema 合法、平均 7.35 分。剩余工作见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)。
 
 ---
 
@@ -90,6 +90,15 @@ bash scripts/bootstrap.sh --packs-repo git@github.com:LLM-X-Factorer/llmx-scout-
 ```
 
 脚本是幂等的：再跑一次只会修复漂移（重装 plist、重跑 uv sync、重做 doctor），不会破坏已有数据。
+
+### 远程心跳监测
+
+`llmx-scout-packs` 仓库有一个 [GitHub Actions heartbeat](https://github.com/LLM-X-Factorer/llmx-scout-packs/actions/workflows/heartbeat.yml)，每天 22:00 HK 自动检查当天 scout 是否还在 push packs。0 个 commit 持续 22 小时就会：
+
+1. Workflow 失败 → GitHub 默认给 repo owner 发邮件
+2. 自动开 issue，带排查清单（SSH 进 mini 后逐项跑）
+
+这样你**不需要主动去 mini 上看日志** —— 跑通了不打扰，跑挂了主动叫你。
 
 ## Pack 投递（可选，但推荐用于多机部署）
 
@@ -218,11 +227,15 @@ scout_analysis:
 - [x] [#9](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/9) launchd plist 模板化
 - [x] [#10](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/10) Bootstrap script for new host
 
+**最高优先级（阻塞下游）**
+- [ ] [#16](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/16) **验证 advocate-agent 端到端消费一个真实 pack**（在它跑通之前其他 scout 优化都是押宝未验证的契约）
+
 **等数据积累 / 用户输入**
 - [ ] [#1](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/1) Score 阈值边界波动 ±0.4（等 ~30 条 score_history）
 - [ ] [#4](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/4) 重评机制（spec §11，等 dedup 攒一周）
 - [ ] [#6](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/6) Prompt v0.2（等用户提供 20 条真实历史样本）
 - [ ] [#7](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/7) Floor rule 触发与 judgment_space 不一致（配合 #6 一起改）
+- [ ] [#15](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/15) OpenRouter 评分失败率 ~50%（短期：加 backoff；中期：换 Anthropic key）
 
 ### 不在路线图前列
 
