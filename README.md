@@ -2,7 +2,11 @@
 
 > 为 AI 工程布道者准备的"每日选题侦察兵"。从海外 AI 圈的高质量信息源主动寻找有判断空间的选题，扒原文、扒讨论、写预判，输出标准化 source pack 文件给下游内容生产 agent 消费。
 
-**状态**：[v0.1.1](https://github.com/LLM-X-Factorer/llmx-scout-agent/releases) — 已部署到香港 Mac mini 生产环境。HN + GitHub Trending + Reddit 三源每日 9/15/21 自动跑；pack 自动 push 到独立仓库 [`llmx-scout-packs`](https://github.com/LLM-X-Factorer/llmx-scout-packs)（私有）。两天产出 26 个 packs 全部 schema 合法、平均 7.35 分。剩余工作见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)。
+**状态**：[v0.1.1](https://github.com/LLM-X-Factorer/llmx-scout-agent/releases) — 已部署到香港 Mac mini 生产环境。HN + GitHub Trending + Reddit 三源每日 9/15/21 自动跑；pack 自动 push 到独立仓库 [`llmx-scout-packs`](https://github.com/LLM-X-Factorer/llmx-scout-packs)（私有）。两天产出 26 个 packs 全部 schema 合法、平均 7.35 分。
+
+**端到端验证完成（2026-04-29）**：下游 [`llmx-advocate-agent` v0.2.0](https://github.com/LLM-X-Factorer/llmx-advocate-agent/releases/tag/v0.2.0) 实测通过 P1 → P6，从 scout pack 产出 18 scenes / 6m22s 完整视频脚本 + 标题候选 + 简介 + 时间戳。schema_version 1.0 在两个版本化端点之间正式 honor。
+
+剩余工作见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)。
 
 ---
 
