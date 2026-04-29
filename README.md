@@ -8,6 +8,21 @@
 
 剩余工作见 [issues](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues)。
 
+### 当前模式：维护中（无活跃开发）
+
+scout 已在生产、契约已验证、心跳监测在工作。**短期内不计划新代码 / 新版本**。仓库进入"操作中、按需响应"状态。
+
+**会让开发重新动起来的触发条件**（按可能性排序）：
+
+| 触发 | 解锁的 issue / 工作 |
+|---|---|
+| 用户提供 20 条真实历史选题样本 | [#6](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/6) Prompt v0.2 校准（自然带动 [#7](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/7) floor rule 修复）|
+| 用户拿到 Anthropic API key | [#15](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/15) 切到生产 provider，OpenRouter 失败率问题自然消失 |
+| Cron 跑满一周（~5 月初）| [#1](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/1) 用 ~30 条 score_history 评估阈值波动 + [#4](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/4) 重评机制有数据基础 |
+| Heartbeat 报警 / mini 出问题 | 故障响应（diagnostic 优先，修代码其次）|
+| advocate 跑更后 phase 暴露新契约摩擦 | schema 微调（按 [docs/source-pack-schema.md](./docs/source-pack-schema.md) 同步纪律双仓 commit）|
+| B 站观众反馈视频质量 | 反过来调 prompt v0.2 / 选题方向 / 阈值 |
+
 ---
 
 ## 它解决什么问题

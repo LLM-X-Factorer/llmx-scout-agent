@@ -43,7 +43,9 @@
 - 平均 2.23 个 controversy_signals/pack
 - 0 抓取或推送故障
 
-**核心阻塞**：[#16](https://github.com/LLM-X-Factorer/llmx-scout-agent/issues/16) — 下游 advocate-agent 还没真消费过一个 pack，schema 是未实战验证的契约。所有 scout 内部优化（#15 / #7 / #1 / #6 / #4）暂停在这之后。
+**契约已验证**（2026-04-29）：advocate v0.2.0 端到端通过 P1-P6，从 scout pack 产出 18 scenes / 6m22s 视频脚本。schema_version 1.0 在两个版本化端点之间正式 honor。
+
+**当前模式**：维护中。仓库不主动开发，等触发条件（README 有清单）。所有 5 个 open issue 都阻塞在用户输入 / 数据积累 / 下游反馈。
 
 **未来工作走 GitHub issues**，不走本文件。决策日志只记"已经定下来"的设计选择。
 
@@ -185,6 +187,24 @@ scout 与下游 `llmx-advocate-agent` 通过 source pack 文件通信。
 - **风险**：同一 URL 可能产生多版 pack；下游 advocate 需识别同 url_hash 多版本
 - **拍板人**：用户（2026-04-26）
 - **落地**：`docs/specification.md` §11
+
+### 2026-04-29 · 项目进入维护模式（已拍板）
+
+- **决策**：scout 仓库进入"操作中、按需响应"状态。**不主动开发 / 不发新 release / 不预防性优化**
+- **理由**：
+    - 生产已部署且健康（HK Mac mini 自主跑、26 packs 经验证、心跳监测覆盖故障场景）
+    - 端到端契约已验证（advocate v0.2.0 实战通过 P1-P6）
+    - 5 个 open issue 全部阻塞在数据积累 / 用户输入 / 下游反馈，**没有任何一个能由 scout 单方启动**
+    - 在 B 站观众数据回流前，所有内部优化都是猜测
+- **重新激活的触发条件**（README "当前模式" 段有完整表格）：
+    - 用户提供 20 条历史样本 → 启动 #6 prompt v0.2
+    - 用户拿到 Anthropic key → #15 自动消失
+    - Cron 跑满一周 → #1 #4 有数据基础
+    - Heartbeat 报警 → 故障响应
+    - advocate 后续 phase 暴露新契约摩擦 → schema 微调
+    - B 站观众反馈 → 反推 prompt 方向
+- **不属于"维护模式"的工作**：写新 source（HN/GH/Reddit 已够）、加 LiteLLM 抽象、Web UI、MCP server 等"看着优雅但没需求"的东西
+- **拍板人**：用户（2026-04-29）
 
 ### 2026-04-29 · 端到端流水线首次产出真实视频脚本（里程碑）
 
